@@ -103,7 +103,7 @@ mysql是默认关闭的，坑点：
 
 如何找到最优的执行计划：调整条件位置、覆盖索引扫描、子查询优化、提前终止查询（limit）、in的优化。
 
-![page28image50019984.jpg](/Users/huxingming/Documents/_typora_images/page28image50019984.jpg) 
+![page28image50019984.jpg](http://ww3.sinaimg.cn/large/006tNc79ly1g61pkgm390j30tm0phac6.jpg) 
 
 ##### 执行计划-id
 
@@ -268,7 +268,7 @@ mysql是默认关闭的，坑点：
 
 > 开始事务前，即对数据进行操作前，把要用到的数据进行备份，如果rollback，就可以用到这些备份数据进行回滚到事务前，实现了事务的**原子性**，还可以防止脏读（事务未提交之前，其他并发事务读取的是备份中的数据，即为快照读）；
 
-![image-20190812092547689](/Users/huxingming/Documents/_typora_images/image-20190812092547689.png)
+![image-20190812092547689](http://ww4.sinaimg.cn/large/006tNc79ly1g61pko0oxzj319a0mm142.jpg)
 
 - 快照读：
 
@@ -282,7 +282,7 @@ mysql是默认关闭的，坑点：
 
 重做，最新的数据备份到一个地方，为了事务的**持久化**而产生的产物，防止在发生故障的时间点，尚有脏页未写入磁盘，在重启mysql服务的时候，根据redolog进行重做，从而达到事务的未入磁盘数据进行持久化这一特性。
 
-![image-20190812093419779](/Users/huxingming/Documents/_typora_images/image-20190812093419779.png)
+![image-20190812093419779](http://ww1.sinaimg.cn/large/006tNc79ly1g61pkt5d2dj314k0r6ds8.jpg)
 
 ### 配置优化
 

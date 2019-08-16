@@ -182,7 +182,7 @@ public class EnableMain {
 
 在分析AutoConfigurationImportSelector源码的时候，会先扫描spring-autoconfigure-metadata.properties
 
-![image-20190815144353685](/Users/huxingming/Documents/_typora_images/image-20190815144353685.png)
+![image-20190815144353685](http://ww4.sinaimg.cn/large/006tNc79ly1g61pm07n63j30vi09cagf.jpg)
 
 ```java
 #Tue Aug 06 08:05:49 GMT 2019
