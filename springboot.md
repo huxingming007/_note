@@ -230,7 +230,7 @@ org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration.ConditionalO
 
 MongoDataAutoConfiguration这个@Configuration如果当前classpath下没有MongoClient这个依赖，MongoDataAutoConfiguration不会被加载到IOC容器中。
 
-###### 简单SPI自己实现的demo
+###### SPI实现的demo
 
 项目Xavier-core，代码如下：对此项目进行install打包
 
@@ -300,3 +300,12 @@ com.xavier.springboot.core.xaviercore.XavierCoreConfig.ConditionalOnClass=
 Exception in thread "main" org.springframework.beans.factory.NoSuchBeanDefinitionException: No qualifying bean of type '**com.xavier.springboot.core.xaviercore.XavierCore**' available
 
 在项目springboot-first上加一个类：TestClass。就成功了！。。。。。
+
+### 什么是start
+
+start是springboot中一个非常重要的概念，start相当于模块，它能将模块所需要的依赖整合起来并对模块内的bean根据环境（条件）进行自动配置。使用者只需要依赖相应功能的start，无需做过多的配置和依赖，springboot就能自动扫描并加载相应的模块。
+
+springboot存在很多开箱即用的start依赖，使得我们在开发业务代码时能够非常方便的、不需要过多关注框架的配置，而只需要关注业务即可。
+
+#### Spring-boot-starter-logging
+

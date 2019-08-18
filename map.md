@@ -224,7 +224,7 @@ CHM支持并发扩容，实现方式是，把node数组进行**拆分**，让**�
 
 采用了高低位的设计：不需要在每次扩容的时候重新计算hash，极大提升了效率。
 
-![img](/Users/huxingming/Documents/_typora_images/auto-orient.png)
+![img](http://ww3.sinaimg.cn/large/006tNc79ly1g61pqjnhmlj31760u077n.jpg)
 
 扩容前的状态。
 
@@ -286,7 +286,7 @@ transfer 方法可以说很牛逼，很精华，内部多线程扩容性能很�
 
 - 1.7采用分段锁的思想，把一个map分成16个segment，通过每次锁住一个segment来保证每个segment内的操作的线程安全性从而实现全局线程安全。每次操作都会映射到一个segment，理论上可以支持16个线程的并发写入。1.8取消了segment分段设计，直接使用node数组来保存数据，并且采用node数组元素作为锁来实现每一行数据进行加锁来进一步减少并发冲突的概率（***减小锁粒度***）。
 
-![image-20190813163850533](/Users/huxingming/Documents/_typora_images/image-20190813163850533.png)
+![image-20190813163850533](http://ww3.sinaimg.cn/large/006tNc79ly1g61pqu2l2ij310c0r6akt.jpg)
 
 - 将原本数组+单向链表的数据结构变更为数组+单向链表+红黑树。红黑树结构使得查询的时间复杂度降低到O(logN))，可以提升查找的性能。
 - 增加了CAS操作来确保node的一些操作原子性，这种方式代替了锁
