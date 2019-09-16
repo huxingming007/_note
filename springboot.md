@@ -301,11 +301,105 @@ Exception in thread "main" org.springframework.beans.factory.NoSuchBeanDefinitio
 
 在项目springboot-first上加一个类：TestClass。就成功了！。。。。。
 
-### 什么是start
+### start
 
 start是springboot中一个非常重要的概念，start相当于模块，它能将模块所需要的依赖整合起来并对模块内的bean根据环境（条件）进行自动配置。使用者只需要依赖相应功能的start，无需做过多的配置和依赖，springboot就能自动扫描并加载相应的模块。
 
 springboot存在很多开箱即用的start依赖，使得我们在开发业务代码时能够非常方便的、不需要过多关注框架的配置，而只需要关注业务即可。
 
 #### Spring-boot-starter-logging
+
+日志框架:JCL(java commons logging)/ Slf4j 
+
+日志系统:Log4j、Log4j2、Logback(Slf4j)、JUL。 
+
+而在我们现在的应用中，绝大部分都是使用 slf4j 作为门面， 然后搭配 logback 或者 log4j2 日志系统
+
+### actuator
+
+微服务应用开发完成以后，最终目的是为了发布到生产环境上给用户试用，开发结束并不意味着研发的生命周期结束，更多的时候他只是一个开始，因为服务在本地测试完成以后，并不一定能够非常完善的考虑到各种场景。所以需要通过运维来保障服务的稳定。
+
+在以前的传统应用中，我们可以靠人工来监控。但是微服务中，几千上万个服务，我们需要了解每个服务的健康状 态，就必须要依靠监控平台来实现。
+
+所以在 SpringBoot 框架中提供了 spring-boot-starter- actuator 自动配置模块来支持对于 SpringBoot 应用的监控。
+
+```java
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+访问http://localhost:8080/actuator可以看到非常多的endpoint。有一些endpoint是不能访问的，涉及到安全问题。如果想开启访问那些安全相关的URL，可以在application.xml中配置，开启所有的endpoint
+
+```java
+management.endpoints.web.exposure.include=*
+```
+
+http://127.0.0.1:8080/actuator/health针对当前springboot应用的健康检查，默认情况下，会通过“up”或者“down”，可以基于下面的这个配置，来打印Heath更详细的信息
+
+```java
+management.endpoint.health.show-details=always
+```
+
+http://127.0.0.1:8080/actuator/loggers显示当前springboot应用中的日志配置信息，针对每个package对应的日志级别
+
+http://127.0.0.1:8080/actuator/beans获取当前springboot应用中IOC容器中的所有的bean
+
+。。。。。
+
+#### 原理
+
+![](http://ww1.sinaimg.cn/large/006tNc79ly1g64yyfrsc3j30yi09sq3q.jpg)
+
+```java
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.springframework.boot.actuate.autoconfigure.amqp.RabbitHealthIndicatorAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.audit.AuditAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.audit.AuditEventsEndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.beans.BeansEndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.cache.CachesEndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.cassandra.CassandraHealthIndicatorAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.cassandra.CassandraReactiveHealthIndicatorAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.cloudfoundry.servlet.CloudFoundryActuatorAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.cloudfoundry.reactive.ReactiveCloudFoundryActuatorAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.condition.ConditionsReportEndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.context.properties.ConfigurationPropertiesReportEndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.context.ShutdownEndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.couchbase.CouchbaseHealthIndicatorAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.couchbase.CouchbaseReactiveHealthIndicatorAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.elasticsearch.ElasticSearchClientHealthIndicatorAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.elasticsearch.ElasticSearchJestHealthIndicatorAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.elasticsearch.ElasticSearchRestHealthIndicatorAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.env.EnvironmentEndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.flyway.FlywayEndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.health.HealthEndpointAutoConfiguration,\
+org.springframework.boot.actuate.autoconfigure.health.HealthIndicatorAutoConfiguration,\
+......
+```
+
+#### actuator对于JMX支持
+
+除了 REST 方式发布的 Endpoint，Actuator 还把它的端点 以 JMX MBean 的方式发布出来，可以通过 JMX 来查看和 管理。
+
+**操作步骤**
+
+在 cmd 中输入 jconsole，连接到 spring-boot 的应用
+
+![](http://ww2.sinaimg.cn/large/006tNc79ly1g64z3myj57j30ok0hwmxw.jpg)
+
+就可以看到 JBean 的信息以及相应的操作。比如可以在操 作菜单中访问 shutdown 的 endpoint 来关闭服务
+
+![](http://ww3.sinaimg.cn/large/006tNc79ly1g64z4cj97tj30mu0ze0u0.jpg)
+
+什么是 JMX
+JMX 全称是 Java Management Extensions。 Java 管理扩 展。它提供了对 Java 应用程序和 JVM 的监控和管理功能。 通过 JMX，我们可以监控
+1. 服务器中的各种资源的使用情况，CPU、内存
+2. JVM 内存的使用情况
+3. JVM 线程使用情况
+比如前面讲的 Actuator 中，就是基于 JMX 的技术来实现
+对 endpoint 的访问
 
