@@ -358,10 +358,10 @@ protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) 
   PROPAGATION_MANDATORY（强制的）：如果当前存在事务，那么加入事务，如果当前没有事务，则抛出异常。
   PROPAGATION_NESTED：如果当前存在事务，则创建一个事务作为当前事务的嵌套事务来运行；如果当前没有事务，则该取值等价于TransactionDefinition.PROPAGATION_REQUIRED。
 - isolation:事务隔离级别，默认为数据库的隔离级别。读未提交、读已提交（一般的数据默认值）、可重复读、序列化。
-- read-only:只读，默认值为false，代码只读，不修改数据的情况下，设置为true可以帮助数据库引擎优化事务。
+- read-only:只读，默认值为false，代码只读，不修改数据的情况下，**设置为true可以帮助数据库引擎优化事务。**
 - rollback-for：发生哪些异常回滚，默认是针对unchecked exception回滚。也就是默认对RuntimeException()异常或是其子类进行事务回滚；如果事务被try catch了 则不进行回滚 try catch(){throw ...}异常可以选择往外抛就会回滚，检查型异常（Checked Exception）与非检查型异常（Unchecked Exception）：前者编译器通不过，必须try catch，不然编译失败   后者编译器不会去检查，可以不用try catch。
 - no-rollback-for:发生哪些异常不回滚
-- Timeout: 事务超时，允许一个事务所执行的时间，超过这个时间，事务没有执行完，则自动回滚事务。默认设置为底层事务系统的超时值，如果底层数据库事务系统没有设置超时值，那么就是none，没有超时限制。
+- Timeout: 事务超时，允许一个事务所执行的时间，超过这个时间，事务没有执行完，**则自动回滚事务**。默认设置为底层事务系统的超时值，如果底层数据库事务系统没有设置超时值，那么就是none，没有超时限制。
 
 ### IOC
 
