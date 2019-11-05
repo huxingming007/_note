@@ -515,6 +515,8 @@ dubbo%3A%2F%2F10.200.20.231%3A20880%2Fcom.xavier.dubbo.api.ISayHelloService%3F
 
 ### dubbo发布简单流程
 
+开始于spring容器初始化后，发布刷新事件，入口方法是ServiceBean的onApplicationEvent方法。
+
 1. 创造一个Invoker；
 2. 把Invoker保存到exportMap中；
 3. 把dubbo协议的URL地址注册到注册中心；
