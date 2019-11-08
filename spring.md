@@ -363,6 +363,17 @@ protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) 
 - no-rollback-for:发生哪些异常不回滚
 - Timeout: 事务超时，允许一个事务所执行的时间，超过这个时间，事务没有执行完，**则自动回滚事务**。默认设置为底层事务系统的超时值，如果底层数据库事务系统没有设置超时值，那么就是none，没有超时限制。
 
+#### 自己实现一个AOP
+
+1. 组件设计：目标类（有实现接口），advice继承InvocationHandler（通知类，对代码进行拦截进行增强的类），JDK原生的proxy
+
+2. 设计接口：BeforeAdvice实现Advice，重写Invoke方法，Invoker方法里边就是有增强的代码，调用代理类的方法，其实进到了Invoke中。
+
+   ```
+   Proxy.newProxyInstance(SimpleAOP.class.getClassLoader(), 
+                   bean.getClass().getInterfaces(), advice);
+   ```
+
 ### IOC
 
 **概念：**为了解决对象之间的耦合度过高的问题！Spring IOC 负责创建对象，管理对象（通过依赖注入（DI），装配对象，配置对象，并且管理这些对象的整个生命周期。我们可以把IOC容器的工作模式看做是工厂模式的升华，可以把IOC容器看作是一个工厂，这个工厂里要生产的对象都在配置文件中给出定义，然后利用编程语言的的反射编程，根据配置文件中给出的类名生成相应的对象。从实现来看，IOC是把以前在工厂方法里写死的对象生成代码，改变为由配置文件来定义，也就是把工厂和对象生成这两者独立分隔开来，目的就是提高灵活性和可维护性。原理：底层就是java的反射。给定一个字符串能创建一个实例，利用set方法对实例的依赖进行注入。
@@ -371,11 +382,22 @@ protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) 
 
 **BeanFactory与ApplicationContext：**BeanFactory（IOC的核心接口）是spring容器的顶层接口，提供了容器最基本的功能（getbean、bean的生命周期的管理包括初始化、销毁）。而ApplicationContext添加了更多高级的功能（支持国际化、统一的资源文件读取方式、针对Web应用的WebApplicationContext等等），另外ApplicationContext容器初始化完成后，容器中所有singleton bean 也被实例化了，getbean的时候，速度会更快。
 
-**BeanDefinition：**IOC的基本数据结构。我们知道，每个bean都有自己的信息，各个属性，类名，类型，是否单例，这些都是bena的信息，spring中如何管理bean的信息呢？对，就是 BeanDefinition， Spring通过定义 BeanDefinition 来管理基于Spring的应用中的各种对象以及他们直接的相互依赖关系。BeanDefinition 抽象了我们对 Bean的定义，是让容器起作用的主要数据类型。对 IOC 容器来说，BeanDefinition 就是对依赖反转模式中管理的对象依赖关系的数据抽象。也是容器实现依赖反转功能的核心数据结构。
+**BeanDefinition：**IOC的基本数据结构。我们知道，每个bean都有自己的信息，各个属性，类名，类型，是否单例，这些都是bean的信息，spring中如何管理bean的信息呢？对，就是 BeanDefinition， Spring通过定义 BeanDefinition 来管理基于Spring的应用中的各种对象以及他们直接的相互依赖关系。BeanDefinition 抽象了我们对 Bean的定义，是让容器起作用的主要数据类型。对 IOC 容器来说，BeanDefinition 就是对依赖反转模式中管理的对象依赖关系的数据抽象。也是容器实现依赖反转功能的核心数据结构。
 
 **beanfactory和factorybean的区别：**前者是一个工厂（容器），是管理bean的一个工厂。 一般情况下，spring通过反射机制利用<bean>的class属性指定实例化bean，在某些情况下，实例化bean过程比较复杂，如果按照传统的方式，则需要在 <bean> 中提供大量的配置信息。 这个时候就可以采用编码的方式，spring提交了一个接口FactoryBean<T>，用户可以通过实现该接口定制实例化 Bean 的逻辑。 它就是一个bean，也是被beanfactory容器所管理，与普通bean不一样的地方在于，根据bean的id获取到的bean并不是factorybean本身，而是FactoryBean的getObject()返回的对象。
 
 **依赖注入的集中方式：**set注入（必须要有set方法）、构造器注入（利用构造方法）、工厂方法注入、注解的方式注入（byName、byType）。
+
+#### 自己实现一个IOC容器
+
+- 设计组件
+  1. BeanFactory容器，BeanDefinition（bean的基本数据结构，上文有介绍），当然还需要加载bean的资源管理器。
+
+- 设计接口
+  1. BeanFactory两个方法getBean和registerBeanDefinition；
+  2. BeanDefinition实体类，字段bean beanClass bean的属性 bean的类全限定名称
+  3. BeanDefinitionReader接口，从XML中读取配置文件，解析成BeanDefinition，最后注册到容器中（hashmap，key是beanname，value是BeanDefinition）
+  4. 接下来初始化我们需要的bean，并且实现依赖注入。利用反射创建bean，并且还需要对该对象进行属性注入，如果属性是ref类型，那么既是依赖关系，则需要调用getBean方法递归的去寻找那个bean。
 
 **spring注解：**
 
@@ -483,7 +505,57 @@ protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) 
 
   IoC 控制反转，指将对象的创建权，反转到Spring容器 ， DI 依赖注入，指Spring创建对象的过程中，将对象依赖属性通过配置进行注入，让相互协作的几个类保持松散耦合。
 
-  
+-   Spring循环依赖需要满足的三个条件：setter注入（通过构造器函数注入，循环引用注入会报错）、单例bean、Boolean属性控制是否可以循环，默认为true。
+
+  A依赖B，B依赖A，A创建的时候，会把A放入缓存中，然后set B，然后对B进行getBean，B类的初始化需要A类，这个时候从缓存中拿到A的bean即可。
+
+  思路：使用一个中间对象来进行解决。
+
+- IOC生命周期：
+
+  BeanFactory 加载 Bean 配置文件，将读到的 Bean 配置封装成 BeanDefinition 对象
+
+  将封装好的 BeanDefinition 对象注册到 BeanDefinition 容器中
+
+  注册 BeanPostProcessor 相关实现类到 BeanPostProcessor 容器中
+
+  BeanFactory 进入就绪状态
+
+  外部调用 BeanFactory 的 getBean(String name) 方法，BeanFactory 着手实例化相应的 bean
+
+  重复步骤 3 和 4，直至程序退出，BeanFactory 被销毁。
+
+### springbean的生命周期
+
+![](https://tva1.sinaimg.cn/large/006y8mN6gy1g8pqsecotcj31at0u0407.jpg)
+
+实例化bean Instantiation
+
+属性赋值 Populate
+
+初始化 Initialization
+
+销毁Destruction
+
+多个扩展点
+
+影响多个bean
+
+BeanPostProcessor
+
+InstantiationAwareBeanPostProcessor
+
+影响单个bean
+
+Aware
+
+生命周期
+
+InitializingBean
+
+DisposableBean
+
+
 
 ### springboot
 
