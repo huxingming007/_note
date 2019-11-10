@@ -116,6 +116,8 @@ mysql是默认关闭的，坑点：
 ##### 执行计划-select_type
 
 > 区分普通查询、联合查询、子查询等
+>
+> 如果遇到DEPENDENT SUBQUERY，特别需要小心，子查询中，先执行了外部查询，再执行子查询，比方说：select * from A where id in(select a_id from B where type=1);如果A表有1千万的数据，那么需要执行1千万次匹配操作。看查询优化后的结果：explain  extended 然后show warnings，居然把in改成exists语句。结论：MySQL的子查询坑比较多，尽量少用，用join查询进行代替，另外在执行SQL前，都尽量explain一下，看看结果集是否可接受，在结果集看到SUBQUERY , DEPENDENT SUBQUERY ,或者Using temporary,Using join buffer，Using filesort类似的,赶紧优化,该加索引的加,该改sql的改.
 
 ##### 执行计划-table
 
@@ -155,13 +157,15 @@ mysql是默认关闭的，坑点：
 
 十分重要的额外信息
 
-> Using filesort：使用一个外部文件进行了排序，而不是按照表内的索引进行排序读取
+> Using filesort：~~使用一个外部文件进行了排序~~，而不是按照表内的索引进行排序读取，排序字段没有使用到索引
 >
 > using temporary：使用临时表保存中间结果，对查询结果排序时使用了临时表，常见于order by 或 group by
 >
 > Using index：覆盖索引，效率高
 >
 > using where：使用了where过滤条件
+>
+> 补充：using temporary，select * from A left join B on..left join C on.. left join D on..left join E on.. order by createTime desc。会产生using temporary和Using filesort，当然去掉排序就不会产生了，另外我们A表和C和D不是直接关联的，去掉C和D，也不会产生。**总结：多表非直接关联的前提下还要排序。**找到原因后，进行优化，子查询、非直接关联变成直接关联（B\C\D三张表进行合并）
 
 #### 查询执行引擎
 
@@ -398,3 +402,7 @@ sql调优总结：
                            3. Slave执行relay日志中的事件，匹配自己的配置 将需要执行的数据，在slave服务上执行一遍从 而达到复制数据的目的。
 
 mycat的分片规则：连续分片（按照日期）、离散分片（取模、一致性hash）、综合分片（结合上面两种）。另外一致性hash的优点是扩容的时候迁移数据量比较少，实际节点少，会造成数据不均匀分布，这个时候需要增加虚拟节点，默认是160倍，也就是虚拟节点数是物理节点数的160倍。
+
+### 优秀博客
+
+[索引和锁强力推荐](https://juejin.im/post/5b55b842f265da0f9e589e79)
