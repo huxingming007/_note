@@ -125,6 +125,23 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 - 0 代表node数组还没有被初始化
 - 正数 代表下一次扩容的大小
 
+### tabAt
+
+为什么不直接使用tab[i]？多线程操作的可见性问题！getObjectVolatile，看到Volatile关键字就表示可见性。根据happens-before原则，对Volatile写操作happens-before于Volatile的读操作。也就是说其他线程对数组的写对于get读取必须是可见的。
+
+```java
+else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+    if (casTabAt(tab, i, null,
+                 new Node<K,V>(hash, key, value, null)))
+        break;                   // no lock when adding to empty bin
+}
+
+    @SuppressWarnings("unchecked")
+    static final <K,V> Node<K,V> tabAt(Node<K,V>[] tab, int i) {
+        return (Node<K,V>)U.getObjectVolatile(tab, ((long)i << ASHIFT) + ABASE);
+    }
+```
+
 ### addCount
 
 ```java
