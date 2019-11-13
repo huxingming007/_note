@@ -280,6 +280,12 @@ protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) 
 
 ##### springboot事务
 
+> 事务接口介绍：
+>
+> 1. **TransactionManager**：事务管理器，里面有commit和rollback方法。
+> 2. **TransactionDefinition**：事务定义信息，包含了**事务隔离级别、传播行为、超时、只读、回滚规则**。
+> 3. **TransactionStatus**：事务运行状态，包含是否是新的事务、是否已经结束。
+
 - BookShopService#purchase方法上面已经@Transactional，BookShopService实例对象其实已经被Cglib 代理了，那么他肯定会走 DynamicAdvisedInterceptor 的 intercept 方法，该方法最重要的事情就是执行通知器或者拦截器的方法，那么该代理有拦截器吗？显然是有的，debug发现该拦截器是TransactionInterceptor，这个类实现了Advice MethodInterceptor的invoke方法，我们来看看TransactionInterceptor的invoke方法做了啥？
 
 - 第一步获取事务属性，通过注解解析器解析Method 对象是否含有注解@Transactional
@@ -563,3 +569,4 @@ DisposableBean
 > 自动配置；减少spring配置的数量。利用了spring4对条件化配置的支持。
 > groovy编写程序，并且使用springboot cli运行程序；
 > actuator；maven中添加spring-boot-actuator;查看管理端点：比方说列出运行所配置的bean，查看自动配置情况，列出应用的线程，展现当前应用的健康状况。        
+
