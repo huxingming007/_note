@@ -142,6 +142,31 @@ else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
     }
 ```
 
+### initTable
+
+~~~java
+while ((tab = table) == null || tab.length == 0) {
+            if ((sc = sizeCtl) < 0)
+                Thread.yield(); // 有线程已经在扩容了
+            else if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {// cas设置sizectl为-1
+                try {
+                    if ((tab = table) == null || tab.length == 0) {
+                        int n = (sc > 0) ? sc : DEFAULT_CAPACITY;
+                        @SuppressWarnings("unchecked")
+                        Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n];
+                        table = tab = nt;
+                        sc = n - (n >>> 2);
+                    }
+                } finally {
+                    sizeCtl = sc;
+                }
+                break;
+            }
+        }
+~~~
+
+
+
 ### addCount
 
 ```java

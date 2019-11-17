@@ -917,3 +917,16 @@ public void subscribe(URL url, NotifyListener listener) {
 
 ZookeeperRegistry.doSubscribe这个方法是订阅，逻辑实现比较多。。。。。
 
+### dubbo的简单调用过程
+
+1. 消费端创建代理进行远程调用
+2. 序列化、过滤器等等
+3. 获得提供者的URL
+4. 集群模块：负载均衡和容错
+5. 通信调用
+6. 服务端收到请求：反序列化、过滤器等等
+7. 把请求交给分发器dispatch
+8. 分发器dispatch派发给线程池
+9. 线程池调用具体的服务。
+10. 响应返回。
+
