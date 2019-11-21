@@ -4,13 +4,34 @@
 
 String：简单数据转化成string再存储，原子自增或者自减去，定时过期，分布式锁；
 
-list：有序、可以重复。生产者消费者模型、有序消息、用户排队；基于Linked Lists实现，头尾操作极速，检索非常慢，故不要用list存大量数据并进行检索。
+list：有序、可以重复。生产者消费者模型、有序消息、用户排队；基于Linked Lists实现，头尾操作极速，检索非常慢，故不要用list存大量数据并进行检索。底层实现：**quicklist**（快速列表），ziplist和linkedlist的结合体，每一个quicklist中的node指向一个ziplist。
 
-set：无序、不可以重复。去重、交集、并集、差集、随机获得一个元素；
+set：无序、不可以重复。去重、交集、并集、差集、随机获得一个元素；底层实现：hashtable（数组+链表的存储结构）
 
-hash：结构化数据存储；
+hash：结构化数据存储（比如对象或者一张表的数据，比起string节省了更多key的空间）；不适合的场景：field不能单独设置过期时间、需要考虑数据量分布的问题（以key进行分片的依据）
 
-zset：set数据结构加了core，可以用于排行榜；有序集合的排序默认按照字段顺序。
+> 购物车场景：
+>
+> key是用户的id；field是商品id；value是商品的数量。
+>
+> Redis的hash本身也是一个KV的结构，类似于java的hashmap。外层的hash只用到了hashtable。当存储hash数据类型时，我们把它叫做内层的hash。内层的hash底层可以使用ziplist（键值对长度小于等于64byte，键值对小于512个）和hashtable
+
+zset：set数据结构加了score（每个元素都有个score，score相同时，按照key的ASCII码排序），可以用于排行榜；有序集合的排序默认按照字段顺序。
+
+> 底层使用**ziplist**数据结构：
+>
+> - 元素数量小于128个
+> - 所有的member的长度都小于64字节
+> - ziplist的内部，按照score排序递增来存储，插入的时候要移动之后的数据
+>
+> 超过阈值之后，使用skiplist+dict存储：
+>
+> - 有序列表的时间复杂度是O(N)。
+> - 跳表的时间复杂度是O(logn)，其性能匹敌红黑树且实现较为简单。
+> - 红黑树的插入很可能会涉及到多个结点的旋转、变色操作，因此需要在外层加锁，无形中降低了它可能的并发度。
+> - 跳表底层是链表实现的，可以实现为lock free，同时它还有着不错的性能。
+>
+> ![](https://tva1.sinaimg.cn/large/006y8mN6gy1g94skiphlcj30m80blwer.jpg)
 
 Bitmaps：布隆过滤器。
 
