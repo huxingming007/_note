@@ -473,6 +473,18 @@ public List<T> getActivateExtension(URL url, String[] values, String group) {
     }
 ~~~
 
+```java
+// 责任链的模式
+@Activate(group = CommonConstants.CONSUMER)
+public class MyFilter implements Filter {
+    @Override
+    public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
+        System.out.println("enter myfilter ..........");
+        return invoker.invoke(invocation);
+    }
+}
+```
+
 **总结：**
 
 这个设计精妙。通过简单的配置'-'可以手动剔除dubbo原生的filter，通过default代表dubbo原生的filter子链，通过配置指定从而实现filter链的顺序控制！值得拜读和学习。

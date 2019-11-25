@@ -369,6 +369,36 @@ protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) 
 - no-rollback-for:发生哪些异常不回滚
 - Timeout: 事务超时，允许一个事务所执行的时间，超过这个时间，事务没有执行完，**则自动回滚事务**。默认设置为底层事务系统的超时值，如果底层数据库事务系统没有设置超时值，那么就是none，没有超时限制。
 
+###### 事务补充
+
+**在一个service内部，事务方法之间的嵌套调用，普通方法和事务方法之间的嵌套调用，都不会开启新的事务，是因为spring采用动态代理机制来实现事务控制，而动态代理最终都是要调用原始对象的，而原始对象在去调用方法时，是不会再触发代理了！**
+
+~~~java
+Service{
+  methodA(){
+    this.methodB();
+  }
+  
+  @Transactional
+  methodB(){
+    save1();
+    save2();
+  }
+}
+main{
+  service.methodA();// 事务不生效，即 save1()成功 save2()失败，无法回滚！
+}
+// 解决方案：把方法B放到另外一个service或者dao
+// 解决方案2(优雅)：springboot启动类加上注解:@EnableAspectJAutoProxy(exposeProxy = true)
+  methodA(){
+    // 使用代理对象调用事务方法开启事务
+    Service s = (Service)AopContext.currentProxy();
+    s.methodB();
+  }
+~~~
+
+
+
 #### 自己实现一个AOP
 
 1. 组件设计：目标类（有实现接口），advice继承InvocationHandler（通知类，对代码进行拦截进行增强的类），JDK原生的proxy
