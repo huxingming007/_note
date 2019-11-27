@@ -345,3 +345,98 @@ rest api的方式进行监控。
 3. 监控配置文件是否被修改
 4. 监控集群状态
 5. 监控堆积的消息数（重要）,堆积严重的话及时增强下游的处理能力（加机器、加线程），绘制热点图，把消息流向和流速全部表达出来，一眼就能知道哪些消息有压力。
+
+## 与其他MQ的区别
+
+### rocketMQ
+
+**顺序消费**
+
+rocketmq消息发送是默认采用轮训的方式，发送到不同的queue中，如果发送到同一条queue里面，mq就能保证顺序消费，这个时候就需要MessageQueueSelector这个类。[参考](https://www.cnblogs.com/happyflyingpig/p/8245297.html)
+
+~~~java
+// 生产端
+SendResult sendResult = producer.send(msgToBroker,
+						new MessageQueueSelector() {
+							@Override
+							public MessageQueue select(List<MessageQueue> mgs,
+									Message msg, Object arg) {
+								Integer id = (Integer) arg;
+								int index = id % mgs.size();
+								return mgs.get(index);
+							}
+						}, 1);// 订单创建、订单支付、订单完成。1可以表示为订单的id，相同订单id的消息可以发送到同一个队列中。
+				System.out.println(sendResult);
+// 消费端
+consumer.registerMessageListener(new MessageListenerOrderly());// 保证M1消费完再消费M2，会出现以下问题
+// 遇到消息失败的消息，无法跳过，当前队列消费暂停
+~~~
+
+**消息重试**
+
+通过查看源码，消息消费的状态，有两种，一个是成功，一个是失败&稍后重试。[参考](https://blog.csdn.net/zhanglianhai555/article/details/77162208?ref=myrecommend)
+
+~~~java
+public enum ConsumeConcurrentlyStatus {
+    /**
+     * Success consumption
+     */
+    CONSUME_SUCCESS,
+    /**
+     * Failure consumption,later try to consume
+     */
+    RECONSUME_LATER;// 策略：如果消费失败，那么1秒后再次消费，如果在失败，5秒后再次消费。。。知道2H后如果消费还失败，那么该条消息就会终止发送给消费者了
+}
+~~~
+
+按照上文的策略，其实我们并不需要有这么多的失败重试，我们只需要三次而已，还没成功，我们希望把这条消息存储起来并采用另一种方式处理，而且希望rocketmq不要再重试呢，因为重试解决不了问题了！
+
+~~~java
+/**
+ * Consumer，订阅消息
+ */
+public class Consumer {
+
+	public static void main(String[] args) throws InterruptedException, MQClientException {
+		DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("group_name");
+		consumer.setNamesrvAddr("192.168.2.222:9876;192.168.2.223:9876");
+		consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
+		consumer.subscribe("TopicTest", "*");
+
+		consumer.registerMessageListener(new MessageListenerConcurrently() {
+			@Override
+			public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
+				try {
+					MessageExt msg = msgs.get(0);
+					String msgbody = new String(msg.getBody(), "utf-8");
+					System.out.println(msgbody + " Receive New Messages: " + msgs);
+					if (msgbody.equals("HelloWorld - RocketMQ4")) {
+						System.out.println("======错误=======");
+						int a = 1 / 0;
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					if (msgs.get(0).getReconsumeTimes() == 3) {
+						// 该条消息可以存储到DB或者LOG日志中，或其他处理方式
+						return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;// 成功
+					} else {
+						return ConsumeConcurrentlyStatus.RECONSUME_LATER;// 重试
+					}
+				}
+				return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+			}
+		});
+
+		consumer.start();
+		System.out.println("Consumer Started.");
+	}
+}
+~~~
+
+还有一种情况是：超时，当消费者1取走消息后，阻塞住了，没有给MQ返回成功或稍后重试。当消费者1挂掉之后，这些消息还是会被消费者2取走。
+
+**事务消息**
+
+mq第一阶段发送prepared消息，会拿到消息的地址，第二阶段执行本地事务，第三阶段通过第一个阶段拿到的地址去访问消息，并修改消息的状态已确认。如果确认消息发送失败了怎么办？mq会定期扫描消息集群中的事务消息，如果发现了prepared消息，它会向消息发送端确认，发送端的事务有没有执行成功，rocketmq会根据发送端设置的策略来决定是回滚还是继续发送确认消息，这样就保证了消息发送与本地事务同时成功或同时失败。
+
+![](https://tva1.sinaimg.cn/large/006y8mN6gy1g9cm58z2oqj30hc096wew.jpg)
