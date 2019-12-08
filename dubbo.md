@@ -519,7 +519,8 @@ dubbo%3A%2F%2F10.200.20.231%3A20880%2Fcom.xavier.dubbo.api.ISayHelloService%3F
 
 1. 创造一个Invoker；
 2. 把Invoker保存到exportMap中；
-3. 把dubbo协议的URL地址注册到注册中心；
+3. 启动netty；
+4. 把dubbo协议的URL地址注册到注册中心；
 
 #### invoker
 
@@ -929,4 +930,16 @@ ZookeeperRegistry.doSubscribe这个方法是订阅，逻辑实现比较多。。
 8. 分发器dispatch派发给线程池
 9. 线程池调用具体的服务。
 10. 响应返回。
+
+### Dubbo-admin
+
+服务管理控制台，路由规则、动态配置、服务降级、访问控制、权重调整、负载均衡。[参考](https://www.cnblogs.com/xhj123/p/8975840.html)
+
+### Dubbo-monitor
+
+统计服务的调用次数和调用时间，服务消费者和提供者，在内存中累计调用次数和调用时间，定时每分钟发送一次统计数据到监控中心，监控中心则使用数据绘制图表来显示。[参考](https://www.jianshu.com/p/b3d4117ecc55)
+
+~~~java
+<dubbo:monitor protocol="registry"/>// 开启monitor
+~~~
 
